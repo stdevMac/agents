@@ -4,4 +4,5 @@
 
 ## Marcos Antonio Maceo Reyes 
 
+[Informe](./doc/informe.pdf)
 
