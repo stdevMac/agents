@@ -52,7 +52,7 @@ Asi luce un tablero recien creado:
 *Adjuntar imagen*
 
 
-
+    
 ### Consideraciones obtenidas
 
 
