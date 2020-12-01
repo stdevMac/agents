@@ -23,7 +23,11 @@ class Board:
         self.valid = m * n > self.number_of_dirty_cells + self.number_of_obstacle_cells + (self.child_number * 2) + 1
         if not self.valid:
             return
-
+        self.free = []
+        for i in range(self.m):
+            for j in range(self.n):
+                self.free.append((i, j))
+        random.shuffle(self.free)
         for i in range(m):
             row = [Blank([], i, y) for y in range(n)]
             self.board[i] = row
@@ -39,9 +43,8 @@ class Board:
             time.sleep(1)
 
     def set_robot(self, robot_type):
-        while True:
-            rnd_x = random.randint(0, self.m)
-            rnd_y = random.randint(0, self.n)
+        while len(self.free) > 0:
+            rnd_x, rnd_y = self.get_free()
 
             cell = self.get_cell(rnd_x, rnd_y)
             if isinstance(cell, Blank):
@@ -53,9 +56,9 @@ class Board:
     def set_child(self):
         child_number = self.child_number
 
-        while child_number != 0:
-            rnd_x = random.randint(0, self.m)
-            rnd_y = random.randint(0, self.n)
+        while child_number != 0 and len(self.free) > 0:
+
+            rnd_x, rnd_y = self.get_free()
 
             cell = self.get_cell(rnd_x, rnd_y)
             if isinstance(cell, Blank):
@@ -66,9 +69,8 @@ class Board:
     def set_trash(self):
         trash_number = self.number_of_dirty_cells
 
-        while trash_number != 0:
-            rnd_x = random.randint(0, self.m)
-            rnd_y = random.randint(0, self.n)
+        while trash_number != 0 and len(self.free) > 0:
+            rnd_x, rnd_y = self.get_free()
 
             cell = self.get_cell(rnd_x, rnd_y)
             if isinstance(cell, Blank):
@@ -78,21 +80,25 @@ class Board:
     def set_obstacle(self):
         obstacle_number = self.number_of_obstacle_cells
 
-        while obstacle_number != 0:
-            rnd_x = random.randint(0, self.m)
-            rnd_y = random.randint(0, self.n)
-
+        while obstacle_number != 0 and len(self.free) > 0:
+            rnd_x, rnd_y = self.get_free()
             cell = self.get_cell(rnd_x, rnd_y)
             if isinstance(cell, Blank):
                 self.board[cell.x][cell.y] = Obstacle([Child], cell.x, cell.y)
                 obstacle_number -= 1
 
+    def get_free(self):
+        if len(self.free) > 0:
+            return self.free.pop()
+        return None
+
     def set_corral(self):
         self.number_of_corrals = self.child_number
 
-        rnd_x = random.randint(0, self.m)
-        rnd_y = random.randint(0, self.n)
-        self.set_corral_from_point(rnd_x, rnd_y)
+        free_position = self.get_free()
+        if free_position is None:
+            return
+        self.set_corral_from_point(free_position[0], free_position[1])
 
     def set_corral_from_point(self, x, y):
         if self.number_of_corrals == 0:
@@ -105,6 +111,10 @@ class Board:
             cell = self.get_cell(x + move_direction[0], y + move_direction[1])
             if not isinstance(cell, Blank):
                 continue
+            try:
+                self.free.remove((cell.x, cell.y))
+            except ValueError:
+                pass
             self.board[cell.x][cell.y] = Corral([], cell.x, cell.y)
             self.number_of_corrals -= 1
             if self.set_corral_from_point(cell.x, cell.y):
@@ -131,7 +141,7 @@ class Board:
                 for x in range(self.m):
                     for y in range(self.n):
                         t = random.randint(0, 100)
-                        if isinstance(self.board[x][y], Child) and t < 60:
+                        if isinstance(self.board[x][y], Child) and t < 30:
                             self.number_of_dirty_cells += self.board[x][y].create_trash(self)
 
                 if self.simulate_timelapse:
@@ -169,6 +179,7 @@ class Board:
         trash = []
         children = []
         obstacles = []
+        self.free = []
         for x in range(self.m):
             for y in range(self.n):
                 if isinstance(self.board[x][y], Corral):
@@ -180,6 +191,8 @@ class Board:
                 if isinstance(self.board[x][y], Obstacle):
                     obstacles.append(self.board[x][y])
                 self.board[x][y] = Blank([], x, y)
+                self.free.append((x, y))
+        random.shuffle(self.free)
 
         self.set_by_list(corrals)
         self.set_by_list(trash)
@@ -188,9 +201,8 @@ class Board:
         self.set_by_list([self.robot])
 
     def set_by_list(self, list_to_add):
-        while len(list_to_add) > 0:
-            rnd_m = random.randint(0, self.m - 1)
-            rnd_n = random.randint(0, self.n - 1)
+        while len(list_to_add) > 0 and len(self.free) > 0:
+            rnd_m, rnd_n = self.get_free()
 
             if isinstance(self.board[rnd_m][rnd_n], Blank):
                 self.board[rnd_m][rnd_n] = list_to_add.pop()

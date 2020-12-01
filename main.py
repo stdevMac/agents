@@ -50,7 +50,7 @@ def main():
                 dirty_cells.append(cells)
                 sim_number -= 1
             sim_number = 30
-            print(f'Environment {30 - sim_number}:')
+            print(f'Environment {10 - environment}:')
             print(f'Won {won} times')
             print(f'Lose {lose} times')
             print(f'Dirty cells {sum(dirty_cells) / len(dirty_cells)}')
